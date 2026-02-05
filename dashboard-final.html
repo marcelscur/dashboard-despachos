@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Cajachica - Caribe Beach Wear</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #06b6d4;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --border: #e2e8f0;
+            --purple: #8b5cf6;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--dark);
+        }
+
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s;
+        }
+
+        .loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: white;
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary), var(--purple));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .logo-text h1 {
+            font-size: 24px;
+            color: var(--dark);
+            margin-bottom: 2px;
+        }
+
+        .logo-text .subtitle {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 8px;
+            background: var(--light);
+            padding: 4px;
+            border-radius: 10px;
+        }
+
+        .view-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--dark);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .view-btn.active {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            color: var(--primary);
+        }
+
+        .refresh-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            background: var(--success);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .refresh-btn:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+
+        .current-date {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--light);
+            border-radius: 8px;
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .mobile-view {
+            display: none;
+        }
+
+        .mobile-view.active {
+            display: block;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .icon-success { background: #d1fae5; color: var(--success); }
+        .icon-danger { background: #fee2e2; color: var(--danger); }
+        .icon-warning { background: #fef3c7; color: var(--warning); }
+        .icon-info { background: #dbeafe; color: var(--info); }
+        .icon-purple { background: #ede9fe; color: var(--purple); }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            padding: 16px;
+            border-radius: 12px;
+            background: var(--light);
+            border-left: 4px solid var(--primary);
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--dark);
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+
+        .stat-value .currency {
+            font-size: 18px;
+            color: #64748b;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 16px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--light);
+            font-weight: 700;
+            color: var(--dark);
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            font-size: 14px;
+            color: #475569;
+        }
+
+        tr:hover {
+            background: #f8fafc;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+
+        .tv-view {
+            display: none;
+        }
+
+        .tv-view.active {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .big-card {
+            background: white;
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            min-height: 400px;
+        }
+
+        .big-card-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 28px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid var(--border);
+        }
+
+        .big-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+
+        .big-card-title {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--dark);
+        }
+
+        .big-stat-grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .big-stat-item {
+            padding: 24px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--light) 0%, white 100%);
+            border-left: 6px solid var(--primary);
+        }
+
+        .big-stat-label {
+            font-size: 16px;
+            color: #64748b;
+            margin-bottom: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .big-stat-value {
+            font-size: 48px;
+            font-weight: 900;
+            color: var(--dark);
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+
+        .big-stat-value .currency {
+            font-size: 28px;
+            color: #64748b;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .alert {
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid var(--success);
+        }
+
+        .alert-danger {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid var(--danger);
+        }
+
+        .alert-warning {
+            background: #fef3c7;
+            color: #92400e;
+            border-left: 4px solid var(--warning);
+        }
+
+        .error-message {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .error-message h2 {
+            color: var(--danger);
+            margin-bottom: 16px;
+        }
+
+        .error-message p {
+            color: #64748b;
+            margin-bottom: 12px;
+        }
+
+        @media (max-width: 1200px) {
+            .tv-view.active {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .view-toggle {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .tv-view.active {
+                grid-template-columns: 1fr;
+            }
+
+            .stat-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 16px;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card, .big-card {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-screen" id="loadingScreen">
+        <div class="spinner"></div>
+        <div class="loading-text">Carregando Dashboard...</div>
+    </div>
+
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">CB</div>
+                <div class="logo-text">
+                    <h1>Dashboard Cajachica</h1>
+                    <div class="subtitle">Caribe Beach Wear</div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div class="current-date" id="currentDate">
+                    📅 <span></span>
+                </div>
+                <div class="view-toggle">
+                    <button class="view-btn active" onclick="switchView('mobile')">📱 Mobile</button>
+                    <button class="view-btn" onclick="switchView('tv')">📺 TV</button>
+                </div>
+                <button class="refresh-btn" onclick="loadData()">
+                    🔄 Atualizar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="mobile-view active" id="mobileView">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon icon-success">💰</div>
+                        Resumo de Cajachicas
+                    </div>
+                </div>
+                <div class="stat-grid" id="cajachicasResumo"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon icon-info">📊</div>
+                        Movimentação Diária
+                    </div>
+                </div>
+                <div class="stat-grid" id="movimentacaoDiaria"></div>
+                <div class="chart-container">
+                    <canvas id="movimentacaoChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon icon-warning">📦</div>
+                        Status de Despachos
+                    </div>
+                </div>
+                <div id="statusDespachos"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon icon-purple">✅</div>
+                        Avaliação de Cajachicas
+                    </div>
+                </div>
+                <div id="avaliacaoCajachicas"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon icon-success">💳</div>
+                        Confirmação de Pagamentos
+                    </div>
+                </div>
+                <div id="confirmacaoPagamentos"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon icon-info">🚚</div>
+                        Relatório de Envios
+                    </div>
+                </div>
+                <div class="stat-grid" id="enviosResumo"></div>
+                <div class="chart-container">
+                    <canvas id="enviosChart"></canvas>
+                </div>
+                <div class="table-container">
+                    <table id="enviosTable">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Serviço</th>
+                                <th>Delivery</th>
+                                <th>Qtd</th>
+                                <th>Valor</th>
+                                <th>Custo Médio</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="tv-view" id="tvView">
+            <div class="big-card">
+                <div class="big-card-header">
+                    <div class="big-icon icon-success">💰</div>
+                    <div class="big-card-title">Cajachicas</div>
+                </div>
+                <div class="big-stat-grid" id="tvCajachicas"></div>
+            </div>
+
+            <div class="big-card">
+                <div class="big-card-header">
+                    <div class="big-icon icon-info">📊</div>
+                    <div class="big-card-title">Hoje</div>
+                </div>
+                <div class="big-stat-grid" id="tvMovimentacao"></div>
+            </div>
+
+            <div class="big-card">
+                <div class="big-card-header">
+                    <div class="big-icon icon-warning">📦</div>
+                    <div class="big-card-title">Status</div>
+                </div>
+                <div id="tvStatus"></div>
+            </div>
+
+            <div class="big-card full-width">
+                <div class="big-card-header">
+                    <div class="big-icon icon-purple">🚚</div>
+                    <div class="big-card-title">Envios Diários</div>
+                </div>
+                <div class="chart-container" style="height: 400px;">
+                    <canvas id="tvEnviosChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // URL do Google Apps Script publicado
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw2OSj_EC2IyQTDhQ_8vdutoQjyK9hCfOYrssDF7Ukhbo0iWpaBc4jxmNtn18gGS0MYjA/exec';
+
+        let dadosGlobais = null;
+        let movimentacaoChart = null;
+        let enviosChart = null;
+        let tvEnviosChart = null;
+
+        // ============================================
+        // INICIALIZAÇÃO
+        // ============================================
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCurrentDate();
+            loadData();
+        });
+
+        function updateCurrentDate() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            const dateStr = now.toLocaleDateString('pt-BR', options);
+            document.querySelector('#currentDate span').textContent = dateStr;
+        }
+
+        // ============================================
+        // CARREGAMENTO DE DADOS
+        // ============================================
+
+        function loadData() {
+            document.getElementById('loadingScreen').classList.remove('hidden');
+
+            // Usar JSONP para evitar problemas de CORS
+            const callbackName = 'dashboardCallback_' + Date.now();
+            
+            // Criar função de callback
+            window[callbackName] = function(data) {
+                try {
+                    if (!data.success) {
+                        throw new Error(data.error || 'Erro desconhecido ao carregar dados');
+                    }
+
+                    dadosGlobais = data;
+
+                    console.log('Dados recebidos:', data);
+
+                    renderCajachicasResumo(data.cajachicas);
+                    renderMovimentacaoDiaria(data.movimentacaoHoje);
+                    renderStatusDespachos(data.despachos);
+                    renderAvaliacaoCajachicas(data.avaliacaoCajachicas);
+                    renderConfirmacaoPagamentos(data.pagamentosHoje);
+                    renderEnvios(data.envios);
+
+                    document.getElementById('loadingScreen').classList.add('hidden');
+
+                    // Limpar
+                    delete window[callbackName];
+                    document.head.removeChild(script);
+
+                } catch (error) {
+                    console.error('Erro ao processar dados:', error);
+                    showError('Erro ao processar dados: ' + error.message);
+                    document.getElementById('loadingScreen').classList.add('hidden');
+                    
+                    delete window[callbackName];
+                    document.head.removeChild(script);
+                }
+            };
+
+            // Criar script tag para JSONP
+            const script = document.createElement('script');
+            script.src = SCRIPT_URL + '?callback=' + callbackName;
+            script.onerror = function() {
+                showError('Erro ao conectar com o Google Apps Script. Verifique se a URL está correta e o script está publicado.');
+                document.getElementById('loadingScreen').classList.add('hidden');
+                delete window[callbackName];
+            };
+            
+            document.head.appendChild(script);
+        }
+
+        function showError(message) {
+            const container = document.querySelector('.container');
+            container.innerHTML = `
+                <div class="error-message">
+                    <h2>⚠️ Erro</h2>
+                    <p>${message}</p>
+                    <p><strong>Verifique:</strong></p>
+                    <ul style="text-align: left; max-width: 500px; margin: 20px auto;">
+                        <li>O script foi publicado corretamente no Google Apps Script</li>
+                        <li>A URL do script está correta</li>
+                        <li>As abas da planilha têm os nomes corretos (CHEQUEO, ENVIOS, Marcel)</li>
+                        <li>Os dados estão nas células corretas</li>
+                    </ul>
+                    <button onclick="location.reload()" style="margin-top: 20px; padding: 12px 24px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">🔄 Tentar Novamente</button>
+                </div>
+            `;
+        }
+
+        // ============================================
+        // FUNÇÕES DE RENDERIZAÇÃO
+        // ============================================
+
+        function formatCurrency(value) {
+            return 'RD$ ' + Math.round(value).toLocaleString('pt-BR');
+        }
+
+        function switchView(view) {
+            const mobileView = document.getElementById('mobileView');
+            const tvView = document.getElementById('tvView');
+            const buttons = document.querySelectorAll('.view-btn');
+
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            if (view === 'mobile') {
+                mobileView.classList.add('active');
+                tvView.classList.remove('active');
+                buttons[0].classList.add('active');
+            } else {
+                mobileView.classList.remove('active');
+                tvView.classList.add('active');
+                buttons[1].classList.add('active');
+                loadTvView();
+            }
+        }
+
+        function renderCajachicasResumo(data) {
+            const container = document.getElementById('cajachicasResumo');
+            const total = data.cbw.atual + data.todo.atual + data.ps.atual;
+
+            container.innerHTML = `
+                <div class="stat-item">
+                    <div class="stat-label">CBW</div>
+                    <div class="stat-value">
+                        <span class="currency">RD$</span>
+                        ${Math.round(data.cbw.atual).toLocaleString('pt-BR')}
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">TODO</div>
+                    <div class="stat-value">
+                        <span class="currency">RD$</span>
+                        ${Math.round(data.todo.atual).toLocaleString('pt-BR')}
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">PS</div>
+                    <div class="stat-value">
+                        <span class="currency">RD$</span>
+                        ${Math.round(data.ps.atual).toLocaleString('pt-BR')}
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Total</div>
+                    <div class="stat-value">
+                        <span class="currency">RD$</span>
+                        ${Math.round(total).toLocaleString('pt-BR')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderMovimentacaoDiaria(data) {
+            const container = document.getElementById('movimentacaoDiaria');
+
+            container.innerHTML = `
+                <div class="stat-item" style="border-left-color: var(--success);">
+                    <div class="stat-label">Ingressos</div>
+                    <div class="stat-value">
+                        <span class="currency">RD$</span>
+                        ${Math.round(data.ingressos).toLocaleString('pt-BR')}
+                    </div>
+                </div>
+                <div class="stat-item" style="border-left-color: var(--danger);">
+                    <div class="stat-label">Gastos</div>
+                    <div class="stat-value">
+                        <span class="currency">RD$</span>
+                        ${Math.round(data.gastos).toLocaleString('pt-BR')}
+                    </div>
+                </div>
+                <div class="stat-item" style="border-left-color: var(--info);">
+                    <div class="stat-label">Transferências</div>
+                    <div class="stat-value">
+                        <span class="currency">RD$</span>
+                        ${Math.round(data.transferencias).toLocaleString('pt-BR')}
+                    </div>
+                </div>
+                <div class="stat-item" style="border-left-color: var(--purple);">
+                    <div class="stat-label">Saldo</div>
+                    <div class="stat-value">
+                        <span class="currency">RD$</span>
+                        ${Math.round(data.saldo).toLocaleString('pt-BR')}
+                    </div>
+                </div>
+            `;
+
+            renderMovimentacaoChart(data);
+        }
+
+        function renderMovimentacaoChart(data) {
+            const ctx = document.getElementById('movimentacaoChart');
+
+            if (movimentacaoChart) {
+                movimentacaoChart.destroy();
+            }
+
+            movimentacaoChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Ingressos', 'Gastos', 'Transferências', 'Saldo'],
+                    datasets: [{
+                        label: 'Valor (RD$)',
+                        data: [data.ingressos, data.gastos, data.transferencias, data.saldo],
+                        backgroundColor: [
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(239, 68, 68, 0.8)',
+                            'rgba(6, 182, 212, 0.8)',
+                            'rgba(139, 92, 246, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgb(16, 185, 129)',
+                            'rgb(239, 68, 68)',
+                            'rgb(6, 182, 212)',
+                            'rgb(139, 92, 246)'
+                        ],
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'RD$ ' + Math.round(value).toLocaleString('pt-BR');
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderStatusDespachos(data) {
+            const container = document.getElementById('statusDespachos');
+            const statusClass = data.erros === 0 ? 'success' : 'warning';
+            const statusText = data.erros === 0 ? 'Todos confirmados' : `${data.erros} com erro`;
+
+            container.innerHTML = `
+                <div class="alert alert-${statusClass}">
+                    ${data.erros === 0 ? '✅' : '⚠️'} 
+                    <div>
+                        <strong>${statusText}</strong><br>
+                        <span style="font-size: 13px;">
+                            ${data.confirmados} de ${data.total} despachos confirmados
+                        </span>
+                    </div>
+                </div>
+                <div class="stat-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">Total</div>
+                        <div class="stat-value">${data.total}</div>
+                    </div>
+                    <div class="stat-item" style="border-left-color: var(--success);">
+                        <div class="stat-label">Confirmados</div>
+                        <div class="stat-value">${data.confirmados}</div>
+                    </div>
+                    <div class="stat-item" style="border-left-color: var(--danger);">
+                        <div class="stat-label">Erros</div>
+                        <div class="stat-value">${data.erros}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderAvaliacaoCajachicas(data) {
+            const container = document.getElementById('avaliacaoCajachicas');
+
+            const getStatusBadge = (status) => {
+                const statusStr = status.toString().toUpperCase();
+                if (statusStr === 'OK') {
+                    return '<span class="status-badge status-success">✅ OK</span>';
+                } else {
+                    return '<span class="status-badge status-warning">⚠️ ' + status + '</span>';
+                }
+            };
+
+            container.innerHTML = `
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Cajachica</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>CBW</strong></td>
+                                <td>${getStatusBadge(data.cbw)}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>TODO</strong></td>
+                                <td>${getStatusBadge(data.todo)}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>PS</strong></td>
+                                <td>${getStatusBadge(data.ps)}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Envios</strong></td>
+                                <td>${getStatusBadge(data.envios)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderConfirmacaoPagamentos(data) {
+            const container = document.getElementById('confirmacaoPagamentos');
+
+            container.innerHTML = `
+                <div class="stat-grid">
+                    <div class="stat-item" style="border-left-color: var(--success);">
+                        <div class="stat-label">Recebidos</div>
+                        <div class="stat-value">${data.recebidos}</div>
+                    </div>
+                    <div class="stat-item" style="border-left-color: var(--warning);">
+                        <div class="stat-label">Pendentes</div>
+                        <div class="stat-value">${data.pendentes}</div>
+                    </div>
+                    <div class="stat-item" style="border-left-color: var(--primary);">
+                        <div class="stat-label">Valor Total</div>
+                        <div class="stat-value">
+                            <span class="currency">RD$</span>
+                            ${Math.round(data.valor).toLocaleString('pt-BR')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderEnvios(data) {
+            const container = document.getElementById('enviosResumo');
+            const tableBody = document.querySelector('#enviosTable tbody');
+
+            if (!data || data.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #64748b;">Nenhum envio encontrado</p>';
+                tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhum dado disponível</td></tr>';
+                return;
+            }
+
+            const totalEnvios = data.reduce((sum, item) => sum + item.quantidade, 0);
+            const totalValor = data.reduce((sum, item) => sum + item.valorTotal, 0);
+            const custoMedio = totalEnvios > 0 ? totalValor / totalEnvios : 0;
+
+            container.innerHTML = `
+                <div class="stat-item" style="border-left-color: var(--purple);">
+                    <div class="stat-label">Total Envios</div>
+                    <div class="stat-value">${totalEnvios}</div>
+                </div>
+                <div class="stat-item" style="border-left-color: var(--info);">
+                    <div class="stat-label">Valor Total</div>
+                    <div class="stat-value">
+                        <span class="currency">RD$</span>
+                        ${Math.round(totalValor).toLocaleString('pt-BR')}
+                    </div>
+                </div>
+                <div class="stat-item" style="border-left-color: var(--success);">
+                    <div class="stat-label">Custo Médio</div>
+                    <div class="stat-value">
+                        <span class="currency">RD$</span>
+                        ${Math.round(custoMedio)}
+                    </div>
+                </div>
+            `;
+
+            tableBody.innerHTML = data.map(item => `
+                <tr>
+                    <td><strong>${item.data}</strong></td>
+                    <td>${item.servico}</td>
+                    <td>${item.delivery}</td>
+                    <td>${item.quantidade}</td>
+                    <td><strong>${formatCurrency(item.valorTotal)}</strong></td>
+                    <td>${formatCurrency(item.custoMedio)}</td>
+                </tr>
+            `).join('');
+
+            renderEnviosChart(data);
+        }
+
+        function renderEnviosChart(data) {
+            const ctx = document.getElementById('enviosChart');
+
+            if (enviosChart) {
+                enviosChart.destroy();
+            }
+
+            enviosChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(item => item.data),
+                    datasets: [
+                        {
+                            label: 'Quantidade de Envios',
+                            data: data.map(item => item.quantidade),
+                            borderColor: 'rgb(139, 92, 246)',
+                            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Valor Total (RD$)',
+                            data: data.map(item => item.valorTotal),
+                            borderColor: 'rgb(6, 182, 212)',
+                            backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Quantidade'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Valor (RD$)'
+                            },
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                        }
+                    }
+                }
+            });
+        }
+
+        // ============================================
+        // TV VIEW
+        // ============================================
+
+        function loadTvView() {
+            if (!dadosGlobais) return;
+
+            renderTvCajachicas(dadosGlobais.cajachicas);
+            renderTvMovimentacao(dadosGlobais.movimentacaoHoje);
+            renderTvStatus(dadosGlobais.despachos, dadosGlobais.pagamentosHoje);
+            renderTvEnviosChart(dadosGlobais.envios);
+        }
+
+        function renderTvCajachicas(data) {
+            const container = document.getElementById('tvCajachicas');
+
+            container.innerHTML = `
+                <div class="big-stat-item" style="border-left-color: var(--success);">
+                    <div class="big-stat-label">CBW</div>
+                    <div class="big-stat-value">
+                        <span class="currency">RD$</span>
+                        ${Math.round(data.cbw.atual).toLocaleString('pt-BR')}
+                    </div>
+                </div>
+                <div class="big-stat-item" style="border-left-color: var(--info);">
+                    <div class="big-stat-label">TODO</div>
+                    <div class="big-stat-value">
+                        <span class="currency">RD$</span>
+                        ${Math.round(data.todo.atual).toLocaleString('pt-BR')}
+                    </div>
+                </div>
+                <div class="big-stat-item" style="border-left-color: var(--purple);">
+                    <div class="big-stat-label">PS</div>
+                    <div class="big-stat-value">
+                        <span class="currency">RD$</span>
+                        ${Math.round(data.ps.atual).toLocaleString('pt-BR')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTvMovimentacao(data) {
+            const container = document.getElementById('tvMovimentacao');
+
+            container.innerHTML = `
+                <div class="big-stat-item" style="border-left-color: var(--success);">
+                    <div class="big-stat-label">Ingressos</div>
+                    <div class="big-stat-value">
+                        <span class="currency">RD$</span>
+                        ${Math.round(data.ingressos).toLocaleString('pt-BR')}
+                    </div>
+                </div>
+                <div class="big-stat-item" style="border-left-color: var(--danger);">
+                    <div class="big-stat-label">Gastos</div>
+                    <div class="big-stat-value">
+                        <span class="currency">RD$</span>
+                        ${Math.round(data.gastos).toLocaleString('pt-BR')}
+                    </div>
+                </div>
+                <div class="big-stat-item" style="border-left-color: var(--purple);">
+                    <div class="big-stat-label">Saldo</div>
+                    <div class="big-stat-value">
+                        <span class="currency">RD$</span>
+                        ${Math.round(data.saldo).toLocaleString('pt-BR')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTvStatus(despachos, pagamentos) {
+            const container = document.getElementById('tvStatus');
+            const statusClass = despachos.erros === 0 ? 'success' : 'warning';
+            const statusText = despachos.erros === 0 ? 'Todos OK' : `${despachos.erros} Erros`;
+
+            container.innerHTML = `
+                <div class="alert alert-${statusClass}" style="font-size: 20px; padding: 24px;">
+                    ${despachos.erros === 0 ? '✅' : '⚠️'} 
+                    <div>
+                        <strong style="font-size: 24px;">${statusText}</strong><br>
+                        <span style="font-size: 16px;">
+                            ${despachos.confirmados}/${despachos.total} Despachos
+                        </span>
+                    </div>
+                </div>
+                <div class="big-stat-item" style="border-left-color: var(--success); margin-top: 20px;">
+                    <div class="big-stat-label">Pagamentos Recebidos</div>
+                    <div class="big-stat-value">${pagamentos.recebidos}</div>
+                </div>
+                <div class="big-stat-item" style="border-left-color: var(--warning);">
+                    <div class="big-stat-label">Pagamentos Pendentes</div>
+                    <div class="big-stat-value">${pagamentos.pendentes}</div>
+                </div>
+            `;
+        }
+
+        function renderTvEnviosChart(data) {
+            const ctx = document.getElementById('tvEnviosChart');
+
+            if (tvEnviosChart) {
+                tvEnviosChart.destroy();
+            }
+
+            if (!data || data.length === 0) {
+                ctx.parentElement.innerHTML = '<p style="text-align: center; padding: 40px;">Nenhum dado de envios disponível</p>';
+                return;
+            }
+
+            tvEnviosChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(item => item.data + ' - ' + item.servico),
+                    datasets: [
+                        {
+                            label: 'Quantidade',
+                            data: data.map(item => item.quantidade),
+                            backgroundColor: 'rgba(139, 92, 246, 0.8)',
+                            borderColor: 'rgb(139, 92, 246)',
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Valor Total (RD$)',
+                            data: data.map(item => item.valorTotal),
+                            backgroundColor: 'rgba(6, 182, 212, 0.8)',
+                            borderColor: 'rgb(6, 182, 212)',
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 16
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Quantidade',
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Valor (RD$)',
+                                font: {
+                                    size: 14
+                                }
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Auto-refresh a cada 5 minutos
+        setInterval(() => {
+            loadData();
+            updateCurrentDate();
+        }, 5 * 60 * 1000);
+    </script>
+</body>
+</html>
